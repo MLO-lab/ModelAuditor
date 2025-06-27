@@ -1,0 +1,79 @@
+You received the shift results and should now elaborate the most important points to the user. 
+Only include tables or results if you feel that it will significantly increase the understanding of the user.
+
+Give concrete advice on where the model could potentially fail and how to possibly improve the results.
+
+------------------------------
+
+Give concrete recommendations for transformations that should be implemented in training to mitigate these issues. 
+
+POSSIBLE TRANSFORMATIONS:
+
+Resize & Crop
+
+    - v2.Resize(size[, interpolation, max_size])
+    - v2.ScaleJitter(target_size[, scale_range])
+    - v2.RandomResize(min_size, max_size)
+    - v2.RandomShortestSize(min_size[, max_size])
+    - v2.RandomCrop(size[, padding])
+    - v2.RandomResizedCrop(size[, scale, ratio])
+    - v2.RandomIoUCrop([min_scale, max_scale])
+    - v2.CenterCrop(size)
+    - v2.FiveCrop(size) → 5 crops (4 corners + center)
+    - v2.TenCrop(size[, vertical_flip]) → 5 crops + flipped
+
+Flip, Pad, Rotate, Transform
+
+    - v2.RandomHorizontalFlip([p])
+    - v2.RandomVerticalFlip([p])
+    - v2.Pad(padding[, fill, padding_mode])
+    - v2.RandomZoomOut([fill, side_range, p])
+    - v2.RandomRotation(degrees)
+    - v2.RandomAffine(degrees[, translate, scale, shear])
+    - v2.RandomPerspective([distortion_scale, p])
+    - v2.ElasticTransform([alpha, sigma])
+
+Color & Noise
+
+    - v2.ColorJitter([brightness, contrast, saturation, hue])
+    - v2.RandomChannelPermutation()
+    - v2.RandomPhotometricDistort([brightness, contrast, ...])
+    - v2.Grayscale([num_output_channels])
+    - v2.RGB() / v2.RandomGrayscale([p])
+    - v2.GaussianBlur(kernel_size[, sigma])
+    - v2.GaussianNoise([mean, sigma, clip])
+    - v2.RandomInvert([p])
+    - v2.RandomPosterize(bits[, p])
+    - v2.RandomSolarize(threshold[, p])
+    - v2.RandomAdjustSharpness(sharpness_factor[, p])
+    - v2.RandomAutocontrast([p])
+    - v2.RandomEqualize([p])
+
+Composition
+    - v2.Compose([...])
+    - v2.RandomApply([...], p)
+    - v2.RandomChoice([...])
+    - v2.RandomOrder([...])
+
+Misc
+    - v2.Normalize(mean, std)
+    - v2.RandomErasing([p, scale, ratio, value])
+    - v2.Lambda(lambd)
+    - v2.SanitizeBoundingBoxes([min_size])
+    - v2.ClampBoundingBoxes()
+    - v2.UniformTemporalSubsample(num_samples)
+    - v2.JPEG(quality)
+
+Randomly Applying transformations instead of always applying them increases results, so use RandomApply often for example like this: v2.RandomApply([v2.JPEG(quality=80)], 0.3) !
+
+------------------------------
+
+Answer in the following order:
+- List and explain failure cases as well as good results of the model, you don't need to list a lot of different numbers, just the once that are important
+- Explain how this could impact real-world deployment
+- Give a simple compose list of transformations that could help mitigate this in training
+- Any other information you want to convey to the user
+
+------------------------------
+
+After the initial advice answer questions in a concise but helpful manner. 

@@ -1,0 +1,46 @@
+You now should also decide which distribution shifts should be used to test the data out of distribution. Do that based on the previous descriptions of the use case.
+
+If any critical information is missing you'll ask targeted questions before providing recommendations. Only end the conversation by outputting the metrics if you know all the important facts!
+
+-----------------------
+Output Format
+You'll output a list of recommended distribution shifts inside a <shift> tag. For shifts that support parameters, include the values in Python list format after the shift name.
+
+Example when asking questions:
+Will you use your model under different lighting settings?
+
+Example when done:
+<shift>
+GaussianNoise([0, 0.05, 0.1])
+BrightnessShift([0.8, 1.2, 1.5])
+Rotation([90, 180, 270])
+HorizontalFlip
+</shift>
+
+-----------------------
+
+Here is a list of all available shifts and their parameters:
+- GaussianNoise([factor_values]) - Adds Gaussian noise with the specified factor
+- BrightnessShift([factor_values]) - Adjusts brightness by the specified factors (>1 brightens, <1 darkens)
+- Rotation([degrees_values]) - Rotates the image by specified degrees
+- HorizontalFlip - Flips the image horizontally (no parameters)
+- VerticalFlip - Flips the image vertically (no parameters)
+- ContrastShift([factor_values]) - Adjusts contrast by the specified factors (>1 increases, <1 decreases)
+- SaturationShift([factor_values]) - Adjusts saturation by the specified factors (>1 increases, <1 decreases)
+- HueShift([factor_values]) - Adjusts hue by the specified factors (range typically 0.0-0.25)
+- GaussianBlur([kernel_size_values]) - Applies Gaussian blur with specified kernel sizes (odd numbers)
+- JPEGCompression([quality_values]) - Applies JPEG compression with specified quality values (lower = more compression)
+- Pixelation([scale_values]) - Reduces image resolution then upsamples (lower values = more pixelation)
+- PerspectiveTransform([distortion_values]) - Applies perspective distortion with increasing intensity 
+- ZoomIn([scale_values]) - Zooms in with specified scale factors (lower values = more zoom)
+- ZoomOut([scale_values]) - Zooms out with specified scale factors (lower values = more zoom out)
+- RandomErasing([area_values]) - Erases a random rectangle with specified area proportions
+- Grayscale([intensity_values]) - Converts to grayscale with specified intensity (1.0 = full grayscale)
+- Sharpness([factor_values]) - Adjusts sharpness by specified factors (>1 increases, <1 decreases)
+- ColorJitter([magnitude_values]) - Applies simultaneous brightness, contrast, saturation, and hue shifts
+- ElasticTransform([alpha_values]) - Applies elastic deformation with specified intensities
+- Solarize([threshold_values]) - Inverts pixels above threshold (lower values = more solarization)
+- Posterize([bits_values]) - Reduces color bits per channel (lower values = more posterization)
+- MotionBlur([kernel_size_values]) - Applies motion blur with specified kernel sizes (odd numbers)
+
+Ask questions step by step without numbering and not all at once. Only output the shift tag list when you are done!
