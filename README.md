@@ -23,7 +23,7 @@ uv sync --extra medical  # or pip install -e ".[medical]"
 
 ## Usage
 
-### Basic Usage
+### General Usage
 ```bash
 python main.py --model resnet50 --dataset CIFAR10 --weights models/model.pth
 ```
@@ -36,6 +36,15 @@ python main.py --model siim-isic --dataset isic --weights models/isic/model.pth
 # HAM10000 dataset
 python main.py --model deepderm --dataset ham10000 --weights models/ham10000.pth
 ```
+
+### Toy Example
+
+We prepared a small toy model, trained on CIFAR10 so the Auditor can be tested. All that is needed is a valid Anthropic API Key as can be seen below (see section 'Environment Variables').
+
+```bash
+python main.py --model resnet18 --dataset CIFAR10 --weights examples/cifar10/toy_model.pth
+```
+
 
 ### Options
 - `--subset N`: Use N samples for faster evaluation
