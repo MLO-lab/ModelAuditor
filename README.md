@@ -42,7 +42,7 @@ python main.py --model deepderm --dataset ham10000 --weights models/ham10000.pth
 We prepared a small toy model, trained on CIFAR10 so the Auditor can be tested. All that is needed is a valid Anthropic API Key as can be seen below (see section 'Environment Variables').
 
 ```bash
-python main.py --model resnet18 --dataset CIFAR10 --weights examples/cifar10/toy_model.pth
+python main.py --model resnet18 --dataset CIFAR10 --weights examples/cifar10/cifar10.pth
 ```
 
 
