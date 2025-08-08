@@ -4,6 +4,8 @@ AI-powered model auditing agent with multi-agent debate for robust evaluation of
 
 ## Setup
 
+This repository has been tested extensively with Python 3.10.15. Typical install time via uv is less than a minute.
+
 ### Using uv (recommended)
 ```bash
 uv sync
@@ -44,6 +46,8 @@ We prepared a small toy model, trained on CIFAR10 so the Auditor can be tested. 
 ```bash
 python main.py --model resnet18 --dataset CIFAR10 --weights examples/cifar10/cifar10.pth
 ```
+
+Expected runtime varies depending on user response speed and subset time but should take less than 10 minutes in total.
 
 
 ### Options
