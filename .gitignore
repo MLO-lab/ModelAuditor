@@ -6,9 +6,16 @@ __pycache__/
 # C extensions
 *.so
 *.png
+*.jpg
 *.ipynb
 *.json
 .DS_Store
+
+ddi/
+melanoma_dataset/
+
+testbench*
+uv.lock
 
 .claude/
 
