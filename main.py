@@ -8,6 +8,7 @@ from rich.live import Live
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.markdown import Markdown
+from rich.padding import Padding
 import re
 import time
 import random
@@ -155,13 +156,13 @@ def run_debate(memory_lst, system_prompt, decision_type, multi_agent_decision, s
     debate_agent_2.add_memory(debate_response_2, display=False)
 
     if show_debate:
-        console.print(Panel(f"[cyan]✱ Multi-agent debate: {decision_type}",
-                           border_style="cyan", box=box.ROUNDED, width=100))
+        console.print(Padding(Panel(f"[cyan]✱ Multi-agent debate: {decision_type}",
+                           border_style="cyan", box=box.ROUNDED, width=100), (0, 0, 0, 2)))
         # Show thinking messages from agents
         msg1 = extract_thinking_message(debate_response_1)
         msg2 = extract_thinking_message(debate_response_2)
-        console.print(f"  [blue]▸[/blue] {msg1}")
-        console.print(f"  [green]▸[/green] {msg2}")
+        console.print(f"    [blue]▸[/blue] {msg1}")
+        console.print(f"    [green]▸[/green] {msg2}")
 
     debate_agent_1.add_event(f"Agent 2 said: {debate_response_2}", display=False)
     debate_agent_2.add_event(f"Agent 1 said: {debate_response_1}", display=False)
@@ -206,12 +207,12 @@ def run_debate(memory_lst, system_prompt, decision_type, multi_agent_decision, s
                 break
 
             if show_debate:
-                console.print(f"  [dim]→ Round {debate_round} complete, continuing...[/dim]")
+                console.print(f"    [dim]→ Round {debate_round} complete, continuing...[/dim]")
 
             debate_round += 1
 
     if show_debate:
-        console.print(f"  [orange3]✓[/orange3] Consensus reached after {debate_round} rounds")
+        console.print(f"    [orange3]✓[/orange3] Consensus reached after {debate_round} rounds")
 
     return result, moderator_response
 
@@ -261,7 +262,7 @@ def main():
         else:
             device = "cpu"
 
-    console.print(f"[yellow]Using device: {device}")
+    console.print(f"  [yellow]Using device: {device}")
 
     # Initialize conversation log
     conversation_log = []
@@ -281,15 +282,15 @@ def main():
     # Load dataset
     try:
         test_set = load_dataset(args.dataset, transform)
-        console.print(f"[green]Successfully loaded dataset: {args.dataset}")
+        console.print(f"  [green]Successfully loaded dataset: {args.dataset}")
     except Exception as e:
-        console.print(f"[red]Error loading dataset: {str(e)}")
+        console.print(f"  [red]Error loading dataset: {str(e)}")
         return
 
     # Create subset for evaluation
     if args.subset and args.subset < len(test_set):
         subset = Subset(test_set, torch.randperm(len(test_set))[:args.subset])
-        console.print(f"[yellow]Using subset of {args.subset} samples")
+        console.print(f"  [yellow]Using subset of {args.subset} samples")
     else:
         subset = test_set
 
@@ -301,14 +302,14 @@ def main():
         console.print("[yellow]Could not determine number of classes, assuming 10")
         num_classes = 10
 
-    console.print(f"[yellow]Number of classes: {num_classes}")
+    console.print(f"  [yellow]Number of classes: {num_classes}")
 
     # Load model
     try:
         model = load_model(args.model, args.weights, num_classes, device)
-        console.print(f"[green]Successfully loaded model: {args.model}")
+        console.print(f"  [green]Successfully loaded model: {args.model}")
     except Exception as e:
-        console.print(f"[red]Error loading model: {str(e)}")
+        console.print(f"  [red]Error loading model: {str(e)}")
         return
 
     # Set multi-agent debate options
@@ -344,16 +345,16 @@ def main():
     audit_round_descriptions = []
 
     ### PHASE 1: COMBINED QUESTIONING (METRICS + SHIFTS)
-    console.print(Panel("✱ Welcome to the Model Auditor! Please describe your classification task to get started.",
+    console.print(Padding(Panel("✱ Welcome to the Model Auditor! Please describe your classification task to get started.",
                        border_style="orange3",
                        box=box.ROUNDED,
-                       width=100))
+                       width=100), (0, 0, 0, 2)))
 
     # Initialize questioning agent
     questioning_agent = Agent(model="anthropic/claude-sonnet-4-5-20250929",
                              system_prompt=open("prompts/combined_initial_prompt.txt").read())
 
-    task_description = console.input("[yellow]> ")
+    task_description = console.input("  [yellow]> ")
     conversation_log.append(f"User: {task_description}")
     questioning_agent.add_event(task_description, display=False)
 
@@ -396,23 +397,23 @@ def main():
                 selected_shifts = [s.strip() for s in shifts if s.strip()]
 
             # Display selections
-            console.print(Panel("\n".join([f"✱ {metric}" for metric in selected_metrics]),
+            console.print(Padding(Panel("\n".join([f"✱ {metric}" for metric in selected_metrics]),
                             title="Selected Metrics",
                             border_style="violet",
                             box=box.ROUNDED,
-                            width=100))
-            console.print(Panel("\n".join([f"✱ {shift}" for shift in selected_shifts]),
+                            width=100), (0, 0, 0, 2)))
+            console.print(Padding(Panel("\n".join([f"✱ {shift}" for shift in selected_shifts]),
                             title="Selected Shifts",
                             border_style="violet",
                             box=box.ROUNDED,
-                            width=100))
+                            width=100), (0, 0, 0, 2)))
 
             conversation_log.append(f"Selected Metrics:\n" + "\n".join([f"- {m}" for m in selected_metrics]))
             conversation_log.append(f"Selected Shifts:\n" + "\n".join([f"- {s}" for s in selected_shifts]))
             break
 
         # Get user input
-        user_input = console.input("[yellow]> ")
+        user_input = console.input("  [yellow]> ")
         conversation_log.append(f"User: {user_input}")
         questioning_agent.add_event(user_input, display=False)
 
@@ -427,7 +428,7 @@ def main():
             metric_instance = eval(f"{metric_name}()")
             auditor.add_metric(metric_instance)
         except Exception as e:
-            console.print(f"[red]✗ Failed to add metric {metric_name}: {str(e)}")
+            console.print(f"  [red]✗ Failed to add metric {metric_name}: {str(e)}")
 
     # Add initial shifts to auditor
     for shift in selected_shifts:
@@ -445,7 +446,7 @@ def main():
                 shift_instance = eval(f"{shift_name}()")
             auditor.add_shift(shift_instance)
         except Exception as e:
-            console.print(f"[red]✗ Failed to add shift {shift}: {str(e)}")
+            console.print(f"  [red]✗ Failed to add shift {shift}: {str(e)}")
 
     ### PHASE 2: MULTI-ROUND AUDITS
     audit_round = 1
@@ -466,7 +467,7 @@ def main():
             results = auditor.run()
             results_table = format_results_for_agent(results)
 
-        console.print(f"[green]✓[/green] Audit round {audit_round} complete ({len(auditor.metrics)} metrics × {len(auditor.shifts)} shifts)")
+        console.print(f"  [green]✓[/green] Audit round {audit_round} complete ({len(auditor.metrics)} metrics × {len(auditor.shifts)} shifts)")
 
         all_audit_results.append(results)
         audit_round_descriptions.append(f"Round {audit_round}: {len(auditor.metrics)} metrics, {len(auditor.shifts)} shifts")
@@ -478,7 +479,7 @@ def main():
 
         # Get interpretation
         if audit_round >= MAX_AUDIT_ROUNDS:
-            console.print(f"[orange3]✱[/orange3] Maximum rounds reached. Moving to final analysis...")
+            console.print(f"  [orange3]✱[/orange3] Maximum rounds reached. Moving to final analysis...")
             break
 
         with console.status("[cyan]Analyzing results...", spinner="dots") as status:
@@ -491,7 +492,7 @@ def main():
         stop_match = re.search(r'<stop>', interpretation_response, re.DOTALL)
 
         if stop_match:
-            console.print(f"[green]✓[/green] Analysis complete - sufficient information gathered")
+            console.print(f"  [green]✓[/green] Analysis complete - sufficient information gathered")
             break
         elif continue_match:
             # Extract additional metrics and shifts
@@ -500,22 +501,22 @@ def main():
 
             if additional_metrics_match:
                 new_metrics = [m.strip() for m in additional_metrics_match.group(1).strip().split('\\n') if m.strip()]
-                console.print(f"[cyan]➜[/cyan] Adding {len(new_metrics)} new metric(s) for round {audit_round + 1}")
+                console.print(f"  [cyan]➜[/cyan] Adding {len(new_metrics)} new metric(s) for round {audit_round + 1}")
                 for m in new_metrics:
-                    console.print(f"  [dim]•[/dim] {m}")
+                    console.print(f"    [dim]•[/dim] {m}")
                 for metric in new_metrics:
                     metric_name = metric.split()[0].strip()
                     try:
                         metric_instance = eval(f"{metric_name}()")
                         auditor.add_metric(metric_instance)
                     except Exception as e:
-                        console.print(f"[red]✗ Failed to add metric {metric_name}: {str(e)}")
+                        console.print(f"  [red]✗ Failed to add metric {metric_name}: {str(e)}")
 
             if additional_shifts_match:
                 new_shifts = [s.strip() for s in additional_shifts_match.group(1).strip().split('\n') if s.strip()]
-                console.print(f"[cyan]➜[/cyan] Adding {len(new_shifts)} new shift(s) for round {audit_round + 1}")
+                console.print(f"  [cyan]➜[/cyan] Adding {len(new_shifts)} new shift(s) for round {audit_round + 1}")
                 for s in new_shifts:
-                    console.print(f"  [dim]•[/dim] {s}")
+                    console.print(f"    [dim]•[/dim] {s}")
                 for shift in new_shifts:
                     try:
                         if '(' in shift and ')' in shift:
@@ -531,12 +532,12 @@ def main():
                             shift_instance = eval(f"{shift_name}()")
                         auditor.add_shift(shift_instance)
                     except Exception as e:
-                        console.print(f"[red]✗ Failed to add shift {shift}: {str(e)}")
+                        console.print(f"  [red]✗ Failed to add shift {shift}: {str(e)}")
 
             audit_round += 1
         else:
             # No clear decision - default to continuing if not at max
-            console.print(f"[yellow]⚠[/yellow] Continuing to next round...")
+            console.print(f"  [yellow]⚠[/yellow] Continuing to next round...")
             audit_round += 1
 
     ### PHASE 3: FINAL COMPREHENSIVE REPORT
@@ -559,20 +560,20 @@ def main():
         final_report = report_agent.ask()
         conversation_log.append(f"\\n=== FINAL COMPREHENSIVE REPORT ===\\n{final_report}")
 
-    console.print(Panel(Markdown(final_report),
+    console.print(Padding(Panel(Markdown(final_report),
                        title="Final Audit Report",
                        border_style="green",
                        box=box.ROUNDED,
-                       width=100))
+                       width=100), (0, 0, 0, 2)))
 
     # Interactive Q&A
-    console.print(Panel("✱ You can now ask questions about the audit (type 'exit' to quit)",
+    console.print(Padding(Panel("✱ You can now ask questions about the audit (type 'exit' to quit)",
                        border_style="orange3",
                        box=box.ROUNDED,
-                       width=100))
+                       width=100), (0, 0, 0, 2)))
 
     while True:
-        user_input = console.input("[yellow]> ")
+        user_input = console.input("  [yellow]> ")
         conversation_log.append(f"User: {user_input}")
         if user_input.lower() in ["exit", "quit", "q"]:
             break
@@ -580,7 +581,7 @@ def main():
         report_agent.add_event(user_input, display=False)
         response = report_agent.ask()
         conversation_log.append(f"Assistant: {response}")
-        console.print(Panel(Markdown(response), border_style="blue", box=box.ROUNDED, width=100))
+        console.print(Padding(Panel(Markdown(response), border_style="blue", box=box.ROUNDED, width=100), (0, 0, 0, 2)))
 
     # Save conversation log
     results_folder = "results"
@@ -597,7 +598,7 @@ def main():
         for line in conversation_log:
             f.write(f"{line}\\n\\n")
 
-    console.print(f"[green]Conversation saved to {filename}")
+    console.print(f"  [green]Conversation saved to {filename}")
 
 def load_dataset(dataset_name, transform):
     """Load dataset based on name or path"""
