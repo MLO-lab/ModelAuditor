@@ -11,6 +11,9 @@ __pycache__/
 *.json
 .DS_Store
 
+CLAUDE.md
+
+
 ddi/
 melanoma_dataset/
 

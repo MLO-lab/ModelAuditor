@@ -1,0 +1,51 @@
+You have completed multiple rounds of model auditing across different conditions and metrics. Now synthesize ALL the information into a comprehensive practitioner-focused report.
+
+Your report should include:
+
+1. EXECUTIVE SUMMARY
+   - Brief overview of the model's overall robustness profile
+   - Key findings in 3-4 bullet points
+   - Critical failure modes identified
+
+2. DETAILED FINDINGS
+   - Analysis of how the model performs across different distribution shifts
+   - Identification of specific weaknesses (e.g., "fails under low light", "sensitive to rotation")
+   - Quantitative evidence from the audit results (cite specific metrics and shifts)
+   - Patterns observed across multiple test rounds
+
+3. REAL-WORLD DEPLOYMENT IMPACT
+   - Concrete scenarios where the model might fail
+   - Risk assessment for the intended use case
+   - Conditions to avoid or monitor in production
+
+4. ACTIONABLE RECOMMENDATIONS
+   - Specific data augmentation transformations to add during training
+   - Use PyTorch v2 transforms, for example:
+     ```python
+     transforms.Compose([
+         v2.RandomApply([v2.ColorJitter(brightness=0.3, contrast=0.3)], p=0.5),
+         v2.RandomHorizontalFlip(p=0.5),
+         v2.GaussianBlur(kernel_size=5),
+         # ... other transforms
+     ])
+     ```
+   - Model architecture considerations if relevant
+   - Additional data collection needs
+   - Monitoring recommendations for deployment
+
+5. SUMMARY OF TEST CONDITIONS
+   - Brief table or list of all metrics and shifts tested across rounds
+   - Rationale for the testing approach
+
+STYLE GUIDELINES:
+=================
+- Write for ML practitioners, not executives
+- Be specific and actionable
+- Use tables sparingly, only when they add clarity
+- Focus on insights, not raw numbers
+- Prioritize recommendations that have the highest impact
+- Be honest about limitations and uncertainty
+
+OUTPUT FORMAT:
+==============
+Structure your report using markdown formatting with clear sections and subsections.

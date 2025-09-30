@@ -36,8 +36,8 @@ class Agent:
                 })
             
             # Determine which Claude model to use
-            # If model is just "anthropic", default to claude-3-7-sonnet
-            model_name = "claude-3-7-sonnet-20250219" if self.model == "anthropic" else self.model.replace("anthropic/", "")
+            # If model is just "anthropic", default to claude-sonnet-4-5
+            model_name = "claude-sonnet-4-5-20250929" if self.model == "anthropic" else self.model.replace("anthropic/", "")
             
             # Call Anthropic API
             response = self.anthropic_client.messages.create(
