@@ -5,6 +5,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich import box
+from rich.padding import Padding
 
 os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY")
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
@@ -76,30 +77,30 @@ class Agent:
     def _display_message(self, content: str, role: str):
         """Display formatted messages in the console using rich."""
         if role == "user":
-            self.console.print(Panel(
-                content, 
-                title="User", 
-                border_style="deep_sky_blue3", 
+            self.console.print(Padding(Panel(
+                content,
+                title="User",
+                border_style="deep_sky_blue3",
                 box=box.ROUNDED,
                 width=100
-            ))
+            ), (0, 0, 0, 2)))
         else:
             # Try to render as markdown for assistant messages
             try:
                 md = Markdown(content)
-                self.console.print(Panel(
-                    md, 
-                    title="Assistant", 
-                    border_style="orange3", 
+                self.console.print(Padding(Panel(
+                    md,
+                    title="Assistant",
+                    border_style="orange3",
                     box=box.ROUNDED,
                     width=100
-                ))
+                ), (0, 0, 0, 2)))
             except Exception:
                 # Fallback to plain text if markdown parsing fails
-                self.console.print(Panel(
-                    content, 
-                    title="Assistant", 
-                    border_style="orange3", 
+                self.console.print(Padding(Panel(
+                    content,
+                    title="Assistant",
+                    border_style="orange3",
                     box=box.ROUNDED,
                     width=100
-                ))
+                ), (0, 0, 0, 2)))

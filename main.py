@@ -632,7 +632,7 @@ def load_dataset(dataset_name, transform):
             
             # Get the original dataset
             dataset = get_dataset(dataset="camelyon17", download=True)
-            original_test_data = dataset.get_subset('test')
+            original_test_data = dataset.get_subset('val')
             
             # Wrap it with our custom wrapper
             test_data = Camelyon17Wrapper(original_test_data, transform=transform)
