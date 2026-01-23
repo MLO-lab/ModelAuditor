@@ -17,7 +17,7 @@ from model_auditor.metrics import *
 from model_auditor.shifts import *
 from torchvision.datasets import CIFAR10
 from torchvision import transforms
-from torch.utils.data import Subset
+from torch.utils.data import Subset, random_split
 import warnings
 import argparse
 from pathlib import Path
@@ -31,6 +31,10 @@ import numpy as np
 
 # Ignore all warnings
 warnings.filterwarnings("ignore")
+
+# Central model configuration - change this to switch LLM providers
+MODEL = "anthropic/claude-sonnet-4-5-20250929"
+#MODEL = "gpt-5.2-2025-12-11"
 
 console = Console()
 
@@ -56,15 +60,19 @@ def get_audit_message(shift_name):
 
 # Setup argument parser
 def parse_args():
-    parser = argparse.ArgumentParser(description="Model Auditor - Evaluate robustness of image classification models")
+    parser = argparse.ArgumentParser(description="Model Auditor - Evaluate robustness of image classification, segmentation, and detection models")
+
+    # Task type
+    parser.add_argument("--task", type=str, default="classification", choices=["classification", "segmentation", "detection"],
+                        help="Task type: 'classification', 'segmentation', or 'detection'")
 
     # Model architecture
     parser.add_argument("--model", type=str, default="resnet18",
-                        help="Model architecture (any torchvision model, 'siim-isic' for SIIM-ISIC model, 'deepderm' for DeepDerm model, or 'other' for ONNX)")
+                        help="Model architecture (any torchvision model, 'unet' for segmentation, 'fasterrcnn' for detection, 'siim-isic', 'deepderm', or 'other' for ONNX)")
 
     # Dataset
     parser.add_argument("--dataset", type=str, default="CIFAR10",
-                        help="Dataset name (torchvision, medmnist, or path to folder)")
+                        help="Dataset name (torchvision, medmnist, 'kvasir-seg' for segmentation, 'polyp-c5-detection' for detection, or path to folder)")
 
     # Model weights
     parser.add_argument("--weights", type=str, required=True,
@@ -90,9 +98,9 @@ def run_debate(memory_lst, system_prompt, decision_type, multi_agent_decision, s
     if not multi_agent_decision:
         return None, False
 
-    debate_agent_1 = Agent(model="anthropic/claude-sonnet-4-5-20250929", system_prompt=system_prompt)
-    debate_agent_2 = Agent(model="anthropic/claude-sonnet-4-5-20250929", system_prompt=system_prompt)
-    moderator_agent = Agent(model="anthropic/claude-sonnet-4-5-20250929", system_prompt=system_prompt)
+    debate_agent_1 = Agent(model=MODEL, system_prompt=system_prompt)
+    debate_agent_2 = Agent(model=MODEL, system_prompt=system_prompt)
+    moderator_agent = Agent(model=MODEL, system_prompt=system_prompt)
 
     debate_agent_1.memory_lst = memory_lst.copy()
     debate_agent_2.memory_lst = memory_lst.copy()
@@ -258,7 +266,7 @@ def main():
         if torch.cuda.is_available():
             device = "cuda"
         elif hasattr(torch, 'backends') and hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-            device = "mps"
+            device = "cpu"
         else:
             device = "cpu"
 
@@ -267,6 +275,7 @@ def main():
     # Initialize conversation log
     conversation_log = []
     conversation_log.append(f"Conversation started at: {datetime.datetime.now()}")
+    conversation_log.append(f"Task: {args.task}")
     conversation_log.append(f"Model: {args.model}")
     conversation_log.append(f"Dataset: {args.dataset}")
     conversation_log.append(f"Weights: {args.weights}")
@@ -335,23 +344,25 @@ def main():
 
 
     # Initialize auditor
-    auditor = ModelAuditor(model, subset, device=device, batch_size=64)
+    auditor = ModelAuditor(model, subset, device=device, batch_size=64, task_type=args.task)
 
     # Maximum number of audit rounds
-    MAX_AUDIT_ROUNDS = 5
+    MAX_AUDIT_ROUNDS = 1
 
     # Storage for all audit rounds
     all_audit_results = []
     audit_round_descriptions = []
 
     ### PHASE 1: COMBINED QUESTIONING (METRICS + SHIFTS)
-    console.print(Padding(Panel("✱ Welcome to the Model Auditor! Please describe your classification task to get started.",
+    task_type_labels = {"classification": "classification", "segmentation": "segmentation", "detection": "detection"}
+    task_type_label = task_type_labels.get(args.task, "classification")
+    console.print(Padding(Panel(f"✱ Welcome to the Model Auditor! Please describe your {task_type_label} task to get started.",
                        border_style="orange3",
                        box=box.ROUNDED,
                        width=100), (0, 0, 0, 2)))
 
-    # Initialize questioning agent
-    questioning_agent = Agent(model="anthropic/claude-sonnet-4-5-20250929",
+    # Initialize questioning agent - single prompt for all tasks
+    questioning_agent = Agent(model=MODEL,
                              system_prompt=open("prompts/combined_initial_prompt.txt").read())
 
     task_description = console.input("  [yellow]> ")
@@ -450,7 +461,7 @@ def main():
 
     ### PHASE 2: MULTI-ROUND AUDITS
     audit_round = 1
-    interpretation_agent = Agent(model="anthropic/claude-sonnet-4-5-20250929",
+    interpretation_agent = Agent(model=MODEL,
                                  system_prompt=open("prompts/interpretation_prompt.txt").read())
 
     # Add initial context to interpretation agent
@@ -542,7 +553,7 @@ def main():
 
     ### PHASE 3: FINAL COMPREHENSIVE REPORT
     with console.status("[orange3]Synthesizing comprehensive report...", spinner="aesthetic") as status:
-        report_agent = Agent(model="anthropic/claude-sonnet-4-5-20250929",
+        report_agent = Agent(model=MODEL,
                             system_prompt=open("prompts/final_report_prompt.txt").read())
 
         # Add all context to report agent
@@ -695,7 +706,7 @@ def load_dataset(dataset_name, transform):
             
             dataset_class = dataset_map.get(dataset_name.lower())
             if dataset_class:
-                return dataset_class(split='test', transform=transform, download=True)
+                return dataset_class(split='val', transform=transform, download=True)
         except ImportError:
             console.print("[red]MedMNIST not installed. Install with: pip install medmnist")
     elif dataset_name.lower() == "isic":
@@ -747,6 +758,253 @@ def load_dataset(dataset_name, transform):
         test_data = HAM10000Dataset(root_dir='data/ham10000/vidir_modern', transform=transform)
         console.print(f"[green]Successfully loaded HAM10000 dataset with {len(test_data)} samples")
         return test_data
+    elif dataset_name.lower() == "kvasir-seg" or dataset_name.lower() == "kvasir":
+        # Kvasir-SEG polyp segmentation dataset
+        from torch.utils.data import Dataset
+        
+        class KvasirSEGDataset(Dataset):
+            """Kvasir-SEG Polyp Dataset for segmentation - returns (image, mask) tuples"""
+            def __init__(self, root_dir='data/kvasir-seg', img_transform=None, mask_transform=None):
+                self.root_dir = Path(root_dir)
+                self.img_transform = img_transform
+                self.mask_transform = mask_transform
+                
+                images_dir = self.root_dir / "Kvasir-SEG" / "images"
+                masks_dir = self.root_dir / "Kvasir-SEG" / "masks"
+                
+                if not images_dir.exists():
+                    raise FileNotFoundError(
+                        f"Kvasir-SEG dataset not found at {self.root_dir}. "
+                        "Run examples/segmentation/train_segmentation.py to download it."
+                    )
+                
+                self.images = sorted(images_dir.glob("*.jpg"))
+                self.masks = sorted(masks_dir.glob("*.jpg"))
+            
+            def __len__(self):
+                return len(self.images)
+            
+            def __getitem__(self, idx):
+                image = Image.open(self.images[idx]).convert("RGB")
+                mask = Image.open(self.masks[idx]).convert("L")
+                
+                if self.img_transform:
+                    image = self.img_transform(image)
+                if self.mask_transform:
+                    mask = self.mask_transform(mask)
+                
+                mask = (mask > 0.5).float()
+                return image, mask
+        
+        # Segmentation transforms
+        img_transform = transforms.Compose([
+            transforms.Resize((256, 256)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        mask_transform = transforms.Compose([
+            transforms.Resize((256, 256)),
+            transforms.ToTensor(),
+        ])
+        
+        full_dataset = KvasirSEGDataset(root_dir='data/kvasir-seg', img_transform=img_transform, mask_transform=mask_transform)
+        
+        # Use same fixed split as training script (70/15/15) with same seed
+        # Return only the TEST split for auditing (same held-out data)
+        total = len(full_dataset)
+        train_size = int(total * 0.70)
+        val_size = int(total * 0.15)
+        test_size = total - train_size - val_size
+        
+        _, _, test_dataset = random_split(
+            full_dataset, [train_size, val_size, test_size],
+            generator=torch.Generator().manual_seed(42)
+        )
+        
+        console.print(f"[green]Successfully loaded Kvasir-SEG test split with {len(test_dataset)} samples")
+        return test_dataset
+    elif dataset_name.lower() == "polyp-c5" or dataset_name.lower() == "polyp_c5":
+        # Polyp C5 dataset for segmentation validation/testing
+        from torch.utils.data import Dataset
+
+        class PolypDataset(Dataset):
+            """Polyp Dataset - returns (image, mask) tuples. Supports C1-C6 datasets."""
+            def __init__(self, dataset_id, base_dir='data', img_transform=None, mask_transform=None):
+                self.dataset_id = dataset_id
+                self.root_dir = Path(base_dir) / f"data_C{dataset_id}"
+                self.img_transform = img_transform
+                self.mask_transform = mask_transform
+
+                images_dir = self.root_dir / f"images_C{dataset_id}"
+                self.masks_dir = self.root_dir / f"masks_C{dataset_id}"
+
+                if not images_dir.exists():
+                    raise FileNotFoundError(
+                        f"Polyp C{dataset_id} dataset not found at {self.root_dir}. "
+                        f"Please ensure the data/data_C{dataset_id} directory contains "
+                        f"images_C{dataset_id} and masks_C{dataset_id} subdirectories."
+                    )
+
+                self.samples = []
+                all_images = sorted(images_dir.glob("*.jpg"))
+
+                for img_path in all_images:
+                    mask_name = img_path.stem + "_mask.jpg"
+                    mask_path = self.masks_dir / mask_name
+
+                    if not mask_path.exists() and img_path.stem.endswith(']'):
+                        clean_stem = img_path.stem[:-1]
+                        alt_mask_path = self.masks_dir / (clean_stem + "_mask.jpg")
+                        if alt_mask_path.exists():
+                            mask_path = alt_mask_path
+
+                    if mask_path.exists():
+                        self.samples.append((img_path, mask_path))
+
+            def __len__(self):
+                return len(self.samples)
+
+            def __getitem__(self, idx):
+                img_path, mask_path = self.samples[idx]
+
+                image = Image.open(img_path).convert("RGB")
+                mask = Image.open(mask_path).convert("L")
+
+                if self.img_transform:
+                    image = self.img_transform(image)
+                if self.mask_transform:
+                    mask = self.mask_transform(mask)
+
+                mask = (mask > 0.5).float()
+                return image, mask
+
+        # Segmentation transforms - use 128x128 to match training
+        img_transform = transforms.Compose([
+            transforms.Resize((128, 128)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        mask_transform = transforms.Compose([
+            transforms.Resize((128, 128)),
+            transforms.ToTensor(),
+        ])
+
+        test_dataset = PolypDataset(
+            dataset_id=5,
+            base_dir='data',
+            img_transform=img_transform,
+            mask_transform=mask_transform
+        )
+
+        console.print(f"[green]Successfully loaded Polyp C5 dataset with {len(test_dataset)} samples")
+        return test_dataset
+    elif dataset_name.lower() == "polyp-c5-detection" or dataset_name.lower() == "polyp_c5_detection":
+        # Polyp C5 dataset for object detection
+        from torch.utils.data import Dataset
+
+        def load_bboxes_from_file(bbox_path):
+            """Load bounding boxes from a bbox text file."""
+            bboxes = []
+            if not bbox_path.exists():
+                return bboxes
+            with open(bbox_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    parts = line.split()
+                    if len(parts) >= 5 and parts[0] == 'polyp':
+                        x_min, y_min, x_max, y_max = map(int, parts[1:5])
+                        if x_max > x_min and y_max > y_min:
+                            bboxes.append([x_min, y_min, x_max, y_max])
+            return bboxes
+
+        class PolypDetectionDataset(Dataset):
+            """Polyp Detection Dataset - returns (image, target) tuples for Faster R-CNN."""
+            def __init__(self, dataset_id, base_dir='data', transform=None):
+                self.dataset_id = dataset_id
+                self.root_dir = Path(base_dir) / f"data_C{dataset_id}"
+                self.transform = transform
+
+                images_dir = self.root_dir / f"images_C{dataset_id}"
+                self.bbox_dir = self.root_dir / f"bbox_C{dataset_id}"
+
+                if not images_dir.exists():
+                    raise FileNotFoundError(
+                        f"Polyp C{dataset_id} dataset not found at {self.root_dir}."
+                    )
+
+                self.samples = []
+                all_images = sorted(images_dir.glob("*.jpg"))
+
+                for img_path in all_images:
+                    bbox_name = img_path.stem + "_mask.txt"
+                    bbox_path = self.bbox_dir / bbox_name
+                    if bbox_path.exists():
+                        self.samples.append((img_path, bbox_path))
+
+            def __len__(self):
+                return len(self.samples)
+
+            def __getitem__(self, idx):
+                img_path, bbox_path = self.samples[idx]
+
+                image = Image.open(img_path).convert("RGB")
+                orig_w, orig_h = image.size
+
+                bboxes = load_bboxes_from_file(bbox_path)
+
+                if self.transform:
+                    image = self.transform(image)
+                    _, new_h, new_w = image.shape
+
+                    scale_x = new_w / orig_w
+                    scale_y = new_h / orig_h
+
+                    scaled_bboxes = []
+                    for box in bboxes:
+                        scaled_box = [
+                            box[0] * scale_x,
+                            box[1] * scale_y,
+                            box[2] * scale_x,
+                            box[3] * scale_y
+                        ]
+                        scaled_bboxes.append(scaled_box)
+                    bboxes = scaled_bboxes
+
+                if len(bboxes) > 0:
+                    boxes = torch.as_tensor(bboxes, dtype=torch.float32)
+                    labels = torch.ones((len(bboxes),), dtype=torch.int64)
+                    area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+                else:
+                    boxes = torch.zeros((0, 4), dtype=torch.float32)
+                    labels = torch.zeros((0,), dtype=torch.int64)
+                    area = torch.zeros((0,), dtype=torch.float32)
+
+                target = {
+                    "boxes": boxes,
+                    "labels": labels,
+                    "image_id": torch.tensor([idx]),
+                    "area": area,
+                    "iscrowd": torch.zeros((len(bboxes),), dtype=torch.int64)
+                }
+
+                return image, target
+
+        # Detection transforms (320x320 to match MobileNet training)
+        det_transform = transforms.Compose([
+            transforms.Resize((320, 320)),
+            transforms.ToTensor(),
+        ])
+
+        test_dataset = PolypDetectionDataset(
+            dataset_id=5,
+            base_dir='data',
+            transform=det_transform
+        )
+
+        console.print(f"[green]Successfully loaded Polyp C5 detection dataset with {len(test_dataset)} samples")
+        return test_dataset
 
     # If not a known dataset, try as a folder path
     if Path(dataset_name).is_dir():
@@ -756,7 +1014,86 @@ def load_dataset(dataset_name, transform):
 
 def load_model(model_name, weights_path, num_classes, device):
     """Load model based on architecture name and weights"""
-    if model_name.lower() == "siim-isic":
+    if model_name.lower() == "fasterrcnn":
+        # Load Faster R-CNN for detection (MobileNet V3 backbone)
+        from torchvision.models.detection import fasterrcnn_mobilenet_v3_large_fpn
+        from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+
+        console.print(f"[yellow]Loading Faster R-CNN (MobileNet V3) detection model from {weights_path}")
+        model = fasterrcnn_mobilenet_v3_large_fpn(weights=None, weights_backbone=None)
+
+        # Replace the classifier head for num_classes (background + polyp = 2)
+        in_features = model.roi_heads.box_predictor.cls_score.in_features
+        model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+
+        model.load_state_dict(torch.load(weights_path, map_location='cpu'))
+        model = model.to(device)
+        model.eval()
+        return model
+    elif model_name.lower() == "unet":
+        # Load U-Net for segmentation
+        import torch.nn as nn
+        
+        class DoubleConv(nn.Module):
+            def __init__(self, in_channels, out_channels):
+                super().__init__()
+                self.double_conv = nn.Sequential(
+                    nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+                    nn.BatchNorm2d(out_channels),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+                    nn.BatchNorm2d(out_channels),
+                    nn.ReLU(inplace=True)
+                )
+            def forward(self, x):
+                return self.double_conv(x)
+        
+        class UNet(nn.Module):
+            def __init__(self, in_channels=3, out_channels=1, features=[64, 128, 256, 512]):
+                super().__init__()
+                self.downs = nn.ModuleList()
+                self.ups = nn.ModuleList()
+                self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+                
+                for feature in features:
+                    self.downs.append(DoubleConv(in_channels, feature))
+                    in_channels = feature
+                
+                self.bottleneck = DoubleConv(features[-1], features[-1] * 2)
+                
+                for feature in reversed(features):
+                    self.ups.append(nn.ConvTranspose2d(feature * 2, feature, kernel_size=2, stride=2))
+                    self.ups.append(DoubleConv(feature * 2, feature))
+                
+                self.final_conv = nn.Conv2d(features[0], out_channels, kernel_size=1)
+            
+            def forward(self, x):
+                skip_connections = []
+                for down in self.downs:
+                    x = down(x)
+                    skip_connections.append(x)
+                    x = self.pool(x)
+                
+                x = self.bottleneck(x)
+                skip_connections = skip_connections[::-1]
+                
+                for idx in range(0, len(self.ups), 2):
+                    x = self.ups[idx](x)
+                    skip = skip_connections[idx // 2]
+                    if x.shape != skip.shape:
+                        x = nn.functional.interpolate(x, size=skip.shape[2:])
+                    x = torch.cat((skip, x), dim=1)
+                    x = self.ups[idx + 1](x)
+                
+                return self.final_conv(x)
+        
+        console.print(f"[yellow]Loading U-Net segmentation model from {weights_path}")
+        model = UNet(in_channels=3, out_channels=1)
+        model.load_state_dict(torch.load(weights_path, map_location='cpu'))
+        model = model.to(device)
+        model.eval()
+        return model
+    elif model_name.lower() == "siim-isic":
         # Load SIIM-ISIC model
         try:
             from architectures.siim_isic_model import SIIMISICClassifier
@@ -937,7 +1274,9 @@ def get_num_classes(dataset_name, model_name=None):
         "pneumoniamnist": 2,
         "retinamnist": 5,
         "chexpert": 5,
-        "ham10000": 2
+        "ham10000": 2,
+        "polyp-c5-detection": 2,  # background + polyp
+        "polyp_c5_detection": 2
     }
     return dataset_classes.get(dataset_name.lower(), None)
 

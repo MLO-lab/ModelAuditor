@@ -1,4 +1,4 @@
-from litellm import completion
+from openai import OpenAI
 from anthropic import Anthropic
 import os
 from rich.console import Console
@@ -7,11 +7,9 @@ from rich.panel import Panel
 from rich import box
 from rich.padding import Padding
 
-os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY")
-os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class Agent:
-    def __init__(self, model: str = "gpt-4o-mini", temperature: float = 0.5, system_prompt: str = None):
+    def __init__(self, model: str = "gpt-4o", temperature: float = 0.5, system_prompt: str = None):
         self.model = model
         self.temperature = temperature
         self.memory_lst = []
@@ -22,9 +20,11 @@ class Agent:
         if system_prompt:
             self.memory_lst = [{"role": "user", "content": system_prompt}]
         
-        # Initialize Anthropic client if using Anthropic models
+        # Initialize appropriate client based on model
         if self.is_anthropic:
             self.anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        else:
+            self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
     def generate_response(self, messages: list[dict], temperature: float = None, max_tokens: int = 5000) -> str:            
         if self.is_anthropic:
@@ -50,13 +50,14 @@ class Agent:
             
             return response.content[0].text
         else:
-            response = completion(
+            # Use native OpenAI library
+            response = self.openai_client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=temperature,
-                max_tokens=max_tokens
+                max_completion_tokens=max_tokens
             )
-            return response["choices"][0]["message"]["content"]
+            return response.choices[0].message.content
             
     def add_memory(self, message: str, display: bool = True):
         self.memory_lst.append({"role": "assistant", "content": f"{message}"})
