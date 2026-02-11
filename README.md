@@ -39,9 +39,19 @@ python main.py --model siim-isic --dataset isic --weights models/isic/model.pth
 python main.py --model deepderm --dataset ham10000 --weights models/ham10000.pth
 ```
 
-### Toy Example
+### Medical Example (DeepDerm)
 
-We prepared a small toy model, trained on CIFAR10 so the Auditor can be tested. All that is needed is a valid Anthropic API Key as can be seen below (see section 'Environment Variables').
+The auditor can be tested with the DeepDerm classifier which can be downloaded [here](https://zenodo.org/records/10049217). All that is needed is a valid Anthropic API Key as can be seen below (see section 'Environment Variables') as well as a test dataset such as [HAM10000](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DBW86T).
+
+```bash
+python main.py --model deepderm --dataset ham10000 --weights models/deepderm_isic.pth
+```
+
+Expected runtime varies depending on user response speed and subset time but should take less than 10 minutes in total.
+
+### Toy Example (CIFAR10)
+
+We also prepared a small toy model, trained on CIFAR10 so the Auditor can be evaluated on natural images. All that is needed is a valid Anthropic API Key as can be seen below (see section 'Environment Variables').
 
 ```bash
 python main.py --model resnet18 --dataset CIFAR10 --weights examples/cifar10/cifar10.pth
