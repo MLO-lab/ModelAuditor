@@ -23,6 +23,68 @@ python main.py --model resnet50 --dataset CIFAR10 --weights path/to/weights.pth
 uv sync --extra medical  # or pip install -e ".[medical]"
 ```
 
+## Data and Model Downloads
+
+### Pre-trained Models (HuggingFace)
+
+Download pre-trained ResNet50 models from [HuggingFace](https://huggingface.co/lukaskuhndkfz/ModelAuditor):
+
+```bash
+# Install huggingface_hub if needed
+pip install huggingface_hub
+
+# Download all models
+python -c "from huggingface_hub import hf_hub_download; [hf_hub_download('lukaskuhndkfz/ModelAuditor', f'{name}_resnet50_1_224.pt', local_dir='models') for name in ['camelyon17', 'chexpert', 'ham10000']]"
+```
+
+Or download individually:
+```bash
+# Camelyon17 (pathology)
+huggingface-cli download lukaskuhndkfz/ModelAuditor camelyon17_resnet50_1_224.pt --local-dir models
+
+# CheXpert (chest X-ray)
+huggingface-cli download lukaskuhndkfz/ModelAuditor chexpert_resnet50_1_224.pt --local-dir models
+
+# HAM10000 (dermatology)
+huggingface-cli download lukaskuhndkfz/ModelAuditor ham10000_resnet50_1_224.pt --local-dir models
+```
+
+### HAM10000 Dataset
+
+1. **Download the dataset** from [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DBW86T):
+   - `HAM10000_images_part_1.zip`
+   - `HAM10000_images_part_2.zip`
+   - `HAM10000_metadata.tab` as CSV
+
+2. **Extract and organize**:
+```bash
+# Create data directory
+mkdir -p data/ham10000
+
+# Extract images (both parts) into data/ham10000/
+unzip HAM10000_images_part_1.zip -d data/ham10000/
+unzip HAM10000_images_part_2.zip -d data/ham10000/
+
+# Copy metadata
+cp HAM10000_metadata.csv data/ham10000/
+```
+
+3. **Split into vidir_modern and rosendahl subsets**:
+```bash
+python setup_ham10000.py
+```
+
+This creates the following structure:
+```
+data/ham10000/
+├── vidir_modern/
+│   ├── bkl/  (475 images)
+│   └── mel/  (680 images)
+└── rosendahl/
+    ├── bkl/  (490 images)
+    └── mel/  (342 images)
+```
+
 ## Usage
 
 ### General Usage
@@ -45,6 +107,11 @@ The auditor can be tested with the DeepDerm classifier which can be downloaded [
 
 ```bash
 python main.py --model deepderm --dataset ham10000 --weights models/deepderm_isic.pth
+```
+
+Alternatively, use our pre-trained ResNet50 model from HuggingFace (see "Data and Model Downloads" above):
+```bash
+python main.py --model resnet50 --dataset ham10000 --weights models/ham10000_resnet50_1_224.pt
 ```
 
 Expected runtime varies depending on user response speed and subset time but should take less than 10 minutes in total.
