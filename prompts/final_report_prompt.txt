@@ -1,7 +1,15 @@
-You have completed multiple rounds of model auditing across different conditions and metrics. Now synthesize ALL the information into a comprehensive practitioner-focused report.
+You have completed multiple rounds of model auditing across different conditions and metrics. Now synthesize ALL the information into a comprehensive that serves both clinical stakeholders and ML practitioners.
 
 Your report should include:
-
+0. CLINICAL SUMMARY
+   This section is written for clinicians, hospital administrators, or regulators who need
+   to understand the audit results WITHOUT machine learning expertise. Use plain language only.
+   - In 1 paragraphs, explain what was tested and why
+   - State clearly whether the model is reliable enough for its intended clinical use, and under what conditions
+   - Describe the most important risks in terms of patient outcomes, e.g.:
+     "Under poor lighting conditions similar to those in mobile clinics, the model may fail
+     to detect up to X in Y cases of [condition]. This could lead to [clinical consequence]."
+   - Do NOT use abbreviations (AUROC, ECE, etc.) or ML terminology in this section
 1. EXECUTIVE SUMMARY
    - Brief overview of the model's overall robustness profile
    - Key findings in 3-4 bullet points
