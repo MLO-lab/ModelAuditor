@@ -344,7 +344,7 @@ def main():
 
 
     # Initialize auditor
-    auditor = ModelAuditor(model, subset, device=device, batch_size=64, task_type=args.task)
+    auditor = ModelAuditor(model, subset)
 
     # Maximum number of audit rounds
     MAX_AUDIT_ROUNDS = 1
@@ -755,7 +755,14 @@ def load_dataset(dataset_name, transform):
                     
                 return image, label
 
-        test_data = HAM10000Dataset(root_dir='data/ham10000/vidir_modern', transform=transform)
+        # Check for demo subset if full dataset not available
+        ham_dir = Path('data/ham10000/vidir_modern')
+        demo_dir = Path('examples/ham10000/vidir_modern')
+        if not ham_dir.exists() and demo_dir.exists():
+            ham_dir = demo_dir
+            console.print("[yellow]Using bundled demo subset (50 images). For full dataset, see README.")
+
+        test_data = HAM10000Dataset(root_dir=str(ham_dir), transform=transform)
         console.print(f"[green]Successfully loaded HAM10000 dataset with {len(test_data)} samples")
         return test_data
     elif dataset_name.lower() == "kvasir-seg" or dataset_name.lower() == "kvasir":
