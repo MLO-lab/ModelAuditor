@@ -8,6 +8,10 @@ __pycache__/
 *.png
 *.jpg
 *.ipynb
+
+# Demo dataset images (HAM10000 subset, CC BY-NC 4.0)
+!examples/ham10000/**/*.jpg
+!data/*.py
 *.json
 .DS_Store
 
