@@ -67,7 +67,7 @@ pip install --no-build-isolation "MetricsReloaded @ git+https://github.com/csudr
 pip install -e .
 ```
 
-> **Why the extra steps?** ModelAuditor depends on [ModelAuditorCore](https://github.com/MLO-lab/ModelAuditorCore), which depends on [MetricsReloaded](https://github.com/csudre/MetricsReloaded). MetricsReloaded's build requires `setuptools<81` (for `pkg_resources`). With uv, `setuptools<81` must be installed in the venv before `uv sync` so it is available during the no-build-isolation build. With pip, MetricsReloaded must be installed explicitly with `--no-build-isolation` first.
+> **Why the extra steps?** ModelAuditor depends on [MetricsReloaded](https://github.com/csudre/MetricsReloaded). MetricsReloaded's build requires `setuptools<81` (for `pkg_resources`). With uv, `setuptools<81` must be installed in the venv before `uv sync` so it is available during the no-build-isolation build. With pip, MetricsReloaded must be installed explicitly with `--no-build-isolation` first.
 
 For medical imaging datasets (Camelyon17 via WILDS, MedMNIST, SIIM-ISIC models):
 
@@ -99,7 +99,7 @@ This runs a minimal audit on the bundled CIFAR-10 toy model (ResNet-18). The age
 
 ## Quick Start
 
-This example audits a pretrained ResNet-50 on the HAM10000 dermatology dataset using a bundled 50-image demo subset (25 benign keratosis + 25 melanoma from the Vienna clinic). No dataset download required.
+This example audits a pretrained ResNet-50 on a dermatology dataset from Vienna (HAM10000). The audit uses a bundled 50-image demo validation subset (25 benign keratosis + 25 melanoma from the Vienna clinic). No dataset download required.
 
 ### 1. Download a pretrained model
 
