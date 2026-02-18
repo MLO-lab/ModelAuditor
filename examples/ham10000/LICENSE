@@ -1,0 +1,23 @@
+HAM10000 Demo Subset — License and Attribution
+================================================
+
+This directory contains a 20-image subset of the HAM10000 dataset, included
+for demonstration purposes only.
+
+Original dataset:
+  Tschandl, P., Rosendahl, C. & Kittler, H. The HAM10000 dataset, a large
+  collection of multi-source dermatoscopic images of common pigmented skin
+  lesions. Sci. Data 5, 180161 (2018).
+  https://doi.org/10.1038/sdata.2018.161
+
+Source:
+  Harvard Dataverse
+  https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DBW86T
+
+License:
+  Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+  https://creativecommons.org/licenses/by-nc/4.0/
+
+This subset (25 bkl + 25 mel images from the "vidir_modern" clinic partition)
+is redistributed under the same CC BY-NC 4.0 license. For the full dataset,
+please download from the Harvard Dataverse link above.
