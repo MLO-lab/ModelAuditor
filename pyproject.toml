@@ -19,7 +19,8 @@ dependencies = [
     "numpy>=1.20.0",
     "scikit-learn>=1.0.0",
     "pillow>=9.0.0",
-    "model-auditor>=0.1.0",
+    "setuptools<81",
+    "model-auditor",
 ]
 
 [project.optional-dependencies]
@@ -32,11 +33,27 @@ medical = [
     "medmnist>=2.0.0",
     "wilds>=2.0.0",
     "geffnet>=1.0.0",
-    "onnxruntime>=1.0.0",
+    "onnxruntime>=1.0.0,<1.21",
 ]
 
 [project.scripts]
 model-auditor = "main:main"
+
+[tool.uv]
+no-build-isolation-package = ["metricsreloaded"]
+
+[tool.uv.sources]
+model-auditor = { git = "https://github.com/MLO-lab/ModelAuditorCore.git" }
+
+[tool.hatch.build.targets.wheel]
+only-include = [
+    "main.py",
+    "data",
+    "utils",
+    "architectures",
+    "prompts",
+    "examples",
+]
 
 [tool.black]
 line-length = 100
