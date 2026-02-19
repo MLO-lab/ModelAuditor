@@ -47,7 +47,7 @@ Your report should include:
 
 STYLE GUIDELINES:
 =================
-- Write for ML practitioners, not executives
+- Write for practitioners, not executives
 - Be specific and actionable
 - Use tables sparingly, only when they add clarity
 - Focus on insights, not raw numbers

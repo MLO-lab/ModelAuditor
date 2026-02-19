@@ -117,6 +117,7 @@ do not assume the user has technical knowledge about the training stage, therfor
 
 2. Once you have ALL necessary information, output BOTH metrics and shifts together:
 
+Example output:
 <metric>
 Metric1
 Metric2
